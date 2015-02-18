@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/TomCatValve2.iml" filepath="$PROJECT_DIR$/TomCatValve2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../TomcatValve1/is-dahboard.iml" filepath="$PROJECT_DIR$/../TomcatValve1/is-dahboard.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/org.wso2.carbon.identity.application.authentication.framework.iml" filepath="$PROJECT_DIR$/../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/org.wso2.carbon.identity.application.authentication.framework.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../originals/is-dashboard/org.wso2.carbon.identity.monitoring/org.wso2.carbon.identity.monitoring.iml" filepath="$PROJECT_DIR$/../../originals/is-dashboard/org.wso2.carbon.identity.monitoring/org.wso2.carbon.identity.monitoring.iml" />
+    </modules>
+  </component>
+</project>
+

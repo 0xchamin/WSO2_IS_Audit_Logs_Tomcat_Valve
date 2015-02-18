@@ -1,0 +1,6 @@
+* TomCatValve2 is the maven tomcat valve project.
+
+* Add HiveQuery to BAM analytics
+* is-dashboard-auth-info-1.0-SNAPSHOT is the tomcat valve. Add this jar to <IS_HOME>/repository/components/lib and add valve configuration to  catalinaserver.xml.
+
+(<Valve className="org.wso2.carbon.identity.audit.dashboard.tomcat.valve.AuditAuthenticationInfoTomcatValve"/>)
