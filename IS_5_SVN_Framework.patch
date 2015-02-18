@@ -1,0 +1,594 @@
+Index: ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/AuthInfoCache.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/AuthInfoCache.java	(revision )
++++ ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/AuthInfoCache.java	(revision )
+@@ -0,0 +1,240 @@
++/*
++ * Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
++ *
++ * WSO2 Inc. licenses this file to you under the Apache License,
++ * Version 2.0 (the "License"); you may not use this file except
++ * in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.wso2.carbon.identity.application.authentication.framework.handler.step.impl;
++
++import org.apache.commons.logging.Log;
++import org.apache.commons.logging.LogFactory;
++import org.wso2.carbon.context.PrivilegedCarbonContext;
++import javax.cache.*;
++
++import org.wso2.carbon.caching.impl.CacheImpl;
++
++import java.io.Serializable;
++import java.util.concurrent.TimeUnit;
++
++public class AuthInfoCache <K extends Serializable, V extends AuthInfoBean>{
++
++    private static Log log = LogFactory.getLog(AuthInfoCache.class);
++
++
++    private static final String APP_AUTH_FRAMEWORK_AUTH_INFO_CACHE_MANAGER
++            = "IdentityApplicationAuthenticationInformationCacheManager";
++    private CacheBuilder<K, V> cacheBuilder;
++    private CacheBuilder<String, V> stringCacheBuilder;
++    private String cacheName = "authInfoCache";
++    private int cacheTimeout = 10;
++    private int capacity = 0;
++
++    public AuthInfoCache() {
++
++    }
++
++    public AuthInfoCache(String cacheName) {
++        this.cacheName = cacheName;
++        this.cacheTimeout = -1;
++
++    }
++
++    public AuthInfoCache(String cacheName, int timeout) {
++        this.cacheName = cacheName;
++
++        if (timeout > 0) {
++            this.cacheTimeout = timeout;
++        } else {
++            this.cacheTimeout = -1;
++        }
++    }
++
++    public AuthInfoCache(String cacheName, int timeout, int capacity) {
++        this.cacheName = cacheName;
++        this.capacity = capacity;
++        if (timeout > 0) {
++            this.cacheTimeout = timeout;
++        } else {
++            this.cacheTimeout = -1;
++        }
++    }
++
++    private Cache<String, V> getAuthInfoCacheWithStringKey() {
++
++        Cache<String, V> cache = null;
++        try {
++
++            CacheManager cacheManager = Caching.getCacheManagerFactory()
++                    .getCacheManager(APP_AUTH_FRAMEWORK_AUTH_INFO_CACHE_MANAGER);
++
++            if (cacheTimeout > 0) {
++                if (stringCacheBuilder == null) {
++                    synchronized (cacheName.intern()) {
++                        if (stringCacheBuilder == null) {
++                            cacheManager.removeCache(cacheName);
++                            stringCacheBuilder = cacheManager.<String, V>createCacheBuilder(cacheName).
++                                    setExpiry(CacheConfiguration.ExpiryType.ACCESSED,
++                                            new CacheConfiguration
++                                                    .Duration(TimeUnit.SECONDS, cacheTimeout)).
++                                    setStoreByValue(false);
++                            cache = stringCacheBuilder.build();
++                            if (capacity != 0) {
++                                ((CacheImpl) cache).setCapacity(capacity);
++                            }
++                        } else {
++                            cache = cacheManager.getCache(cacheName);
++                        }
++                    }
++                } else {
++                    cache = cacheManager.getCache(cacheName);
++                }
++            } else {
++                cache = cacheManager.getCache(cacheName);
++
++            }
++        } finally {
++            //TODO
++        }
++
++        return cache;
++    }
++
++    private Cache<K, V> getAuthInfoCache() {
++
++        Cache<K, V> cache = null;
++        try {
++
++            CacheManager cacheManager = Caching.getCacheManagerFactory()
++                    .getCacheManager(APP_AUTH_FRAMEWORK_AUTH_INFO_CACHE_MANAGER);
++
++            if (cacheTimeout > 0) {
++                if (cacheBuilder == null) {
++                    synchronized (cacheName.intern()) {
++                        if (cacheBuilder == null) {
++                            cacheManager.removeCache(cacheName);
++                            cacheBuilder = cacheManager.<K, V>createCacheBuilder(cacheName).
++                                    setExpiry(CacheConfiguration.ExpiryType.ACCESSED,
++                                            new CacheConfiguration
++                                                    .Duration(TimeUnit.SECONDS, cacheTimeout)).
++                                    setStoreByValue(false);
++                            cache = cacheBuilder.build();
++                            if (capacity != 0) {
++                                ((CacheImpl) cache).setCapacity(capacity);
++                            }
++                        } else {
++                            cache = cacheManager.getCache(cacheName);
++                        }
++                    }
++                } else {
++                    cache = cacheManager.getCache(cacheName);
++                }
++            } else {
++                cache = cacheManager.getCache(cacheName);
++
++            }
++        } finally {
++           //TODO
++        }
++
++        return cache;
++    }
++
++    /**
++     * Add a cache entry.
++     *
++     * @param key   Key which cache entry is indexed.
++     * @param entry Actual object where cache entry is placed.
++     */
++    public void addToCache(K key, V entry) {
++        try {
++            Cache<K, V> cache = getAuthInfoCache();
++            if (cache != null) {
++                cache.put(key, entry);
++            }
++        } finally {
++            //TODO
++        }
++    }
++
++    public void addToCache(String key, V entry) {
++        try {
++            Cache<String, V> cache = getAuthInfoCacheWithStringKey();
++            if (cache != null) {
++                cache.put(key, entry);
++            }
++        } finally {
++            //TODO
++        }
++    }
++
++    public V getValueFromCache(K key) {
++
++        try {
++            Cache<K, V> cache = getAuthInfoCache();
++            if (cache != null) {
++                return (V) cache.get(key);
++            }
++            return null;
++        } finally {
++                    //TODO
++        }
++    }
++
++    public V getAuthInfoFromCache(String key) {
++
++        try {
++            Cache<String, V> cache = getAuthInfoCacheWithStringKey();
++            if (cache != null) {
++                return (V) cache.get(key);
++
++            }
++            return null;
++        } finally {
++            //TODO
++        }
++    }
++
++    /**
++     * Clears a cache entry.
++     *
++     * @param key Key to clear cache.
++     */
++    public void clearCacheEntry(K key) {
++
++        try {
++            Cache<K, V> cache = getAuthInfoCache();
++            if (cache != null) {
++                cache.remove(key);
++            }
++        } finally {
++           //TODO
++        }
++    }
++
++    /**
++     * Remove everything in the cache.
++     */
++    public void clear() {
++
++        try {
++            Cache<K, V> cache = getAuthInfoCache();
++            if (cache != null) {
++                cache.removeAll();
++            }
++        } finally {
++           //TODO
++        }
++    }
++}
++
+Index: ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/context/AuthenticationContext.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/context/AuthenticationContext.java	(revision 211237)
++++ ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/context/AuthenticationContext.java	(revision )
+@@ -72,7 +72,18 @@
+ 	private boolean returning;
+ 	private boolean retrying;
+ 	private boolean previousSessionFound;
+-    
++
++    //if the user is unauthenticated
++    private boolean requestFailed;
++
++    public void setRequestFailed(boolean requestFailed) {
++        this.requestFailed = requestFailed;
++    }
++
++    public boolean isRequestFailed() {
++        return requestFailed;
++    }
++
+     //subject and subjectAttributes should be set by each authenticator
+     private String subject;
+     private Map<ClaimMapping, String> subjectAttributes = new HashMap<ClaimMapping, String>();
+Index: ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/AuthInfoBean.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/AuthInfoBean.java	(revision )
++++ ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/AuthInfoBean.java	(revision )
+@@ -0,0 +1,102 @@
++/*
++ * Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
++ *
++ * WSO2 Inc. licenses this file to you under the Apache License,
++ * Version 2.0 (the "License"); you may not use this file except
++ * in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.wso2.carbon.identity.application.authentication.framework.handler.step.impl;
++
++import java.io.Serializable;
++import java.util.Date;
++
++public class AuthInfoBean implements Serializable {
++
++    private String userName;
++    private String serviceProvider;
++    private String requestType;
++    private String authenticationType;
++    private Date date;
++    private String ipAddress;
++    private String response;
++    private String sessionKeyValue;
++
++    public AuthInfoBean() {
++
++    }
++
++    public void setUserName(String userName) {
++        this.userName = userName;
++    }
++
++    public void setServiceProvider(String serviceProvider) {
++        this.serviceProvider = serviceProvider;
++    }
++
++    public void setRequestTyep(String requestType) {
++        this.requestType = requestType;
++    }
++
++    public void setAuthenticationType(String authenticationType) {
++        this.authenticationType = authenticationType;
++    }
++
++    public void setDate(Date date) {
++        this.date = date;
++    }
++
++    public void setIpAddress(String ipAddress) {
++        this.ipAddress = ipAddress;
++    }
++
++    public void setResponse(String response) {
++        this.response = response;
++    }
++
++    public void setSessionKeyValue(String sessionKeyValue) {
++        this.sessionKeyValue = sessionKeyValue;
++    }
++
++    public String getUserName() {
++        return userName;
++    }
++
++    public String getServiceProvider() {
++        return serviceProvider;
++    }
++
++    public String getRequestTyep() {
++        return requestType;
++    }
++
++    public String getAuthenticationType() {
++        return authenticationType;
++    }
++
++    public Date getDate() {
++        return date;
++    }
++
++    public String getIpAddress() {
++        return ipAddress;
++    }
++
++    public String getResponse() {
++        return response;
++    }
++
++    public String getSessionKeyValue() {
++        return sessionKeyValue;
++    }
++}
+Index: ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/DefaultStepHandler.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/DefaultStepHandler.java	(revision 211237)
++++ ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/handler/step/impl/DefaultStepHandler.java	(revision )
+@@ -31,6 +31,9 @@
+ 
+     private static Log log = LogFactory.getLog(DefaultStepHandler.class);
+     private static volatile DefaultStepHandler instance;
++    private AuthInfoBean authInfoBean;
++    private AuthInfoCache authInfoCache;
++    //public String cachedKey;
+ 
+     public static DefaultStepHandler getInstance() {
+ 
+@@ -46,7 +49,7 @@
+     }
+ 
+     public void handle(HttpServletRequest request, HttpServletResponse response,
+-            AuthenticationContext context) throws FrameworkException {
++                       AuthenticationContext context) throws FrameworkException {
+ 
+         StepConfig stepConfig = context.getSequenceConfig().getStepMap()
+                 .get(context.getCurrentStep());
+@@ -58,10 +61,10 @@
+         Map<String, AuthenticatedIdPData> authenticatedIdPs = context.getPreviousAuthenticatedIdPs();
+         Map<String, AuthenticatorConfig> authenticatedStepIdps = FrameworkUtils
+                 .getAuthenticatedStepIdPs(stepConfig, authenticatedIdPs);
+-        
++
+         // check passive authentication
+         if (context.isPassiveAuthenticate()) {
+-            
++
+             if (authenticatedStepIdps.isEmpty()) {
+                 context.setRequestAuthenticated(false);
+             } else {
+@@ -69,11 +72,11 @@
+                 AuthenticatedIdPData authenticatedIdPData = authenticatedIdPs.get(authenticatedIdP);
+                 populateStepConfigWithAuthenticationDetails(stepConfig, authenticatedIdPData);
+             }
+-            
++
+             stepConfig.setCompleted(true);
+             return;
+-        } 
+-        
++        }
++
+         // if Request has fidp param and if this is the first step
+         if (fidp != null && !fidp.isEmpty() && stepConfig.getOrder() == 1) {
+             handleHomeRealmDiscovery(request, response, context);
+@@ -82,7 +85,7 @@
+             // if this is a request from the multi-option page
+             if (request.getParameter(FrameworkConstants.RequestParams.AUTHENTICATOR) != null
+                     && !request.getParameter(FrameworkConstants.RequestParams.AUTHENTICATOR)
+-                            .isEmpty()) {
++                    .isEmpty()) {
+                 handleRequestFromLoginPage(request, response, context);
+                 return;
+             } else {
+@@ -174,9 +177,9 @@
+                     if (log.isDebugEnabled()) {
+                         log.debug("Sending to the Multi Option page");
+                     }
+-                    
++
+                     String retryParam = "";
+-                    
++
+                     if (stepConfig.isRetrying()) {
+                         context.setCurrentAuthenticator(null);
+                         retryParam = "&authFailure=true&authFailureMsg=login.fail.message";
+@@ -197,7 +200,7 @@
+     }
+ 
+     protected void handleHomeRealmDiscovery(HttpServletRequest request,
+-            HttpServletResponse response, AuthenticationContext context) throws FrameworkException {
++                                            HttpServletResponse response, AuthenticationContext context) throws FrameworkException {
+ 
+         if (log.isDebugEnabled()) {
+             log.debug("Request contains fidp parameter. Initiating Home Realm Discovery");
+@@ -280,7 +283,7 @@
+     }
+ 
+     protected void handleRequestFromLoginPage(HttpServletRequest request,
+-            HttpServletResponse response, AuthenticationContext context) throws FrameworkException {
++                                              HttpServletResponse response, AuthenticationContext context) throws FrameworkException {
+ 
+         if (log.isDebugEnabled()) {
+             log.debug("Recieved a request from the multi option page");
+@@ -315,14 +318,14 @@
+                 return;
+             }
+         }
+-        
++
+         // TODO handle idp null
+ 
+         // TODO handle authenticator name unmatching
+     }
+ 
+     protected void handleResponse(HttpServletRequest request, HttpServletResponse response,
+-            AuthenticationContext context) throws FrameworkException {
++                                  AuthenticationContext context) throws FrameworkException {
+ 
+         if (log.isDebugEnabled()) {
+             log.debug("Receive a response from the external party");
+@@ -339,7 +342,7 @@
+             // Call authenticate if canHandle
+             if (authenticator.canHandle(request)
+                     && (context.getCurrentAuthenticator() == null || authenticator.getName()
+-                            .equals(context.getCurrentAuthenticator()))) {
++                    .equals(context.getCurrentAuthenticator()))) {
+ 
+                 if (log.isDebugEnabled()) {
+                     log.debug(authenticator.getName() + " can handle the request.");
+@@ -353,7 +356,7 @@
+     }
+ 
+     protected void doAuthentication(HttpServletRequest request, HttpServletResponse response,
+-            AuthenticationContext context, AuthenticatorConfig authenticatorConfig)
++                                    AuthenticationContext context, AuthenticatorConfig authenticatorConfig)
+             throws FrameworkException {
+ 
+         SequenceConfig sequenceConfig = context.getSequenceConfig();
+@@ -362,6 +365,12 @@
+         ApplicationAuthenticator authenticator = authenticatorConfig.getApplicationAuthenticator();
+ 
+         try {
++
++            if(request.getParameter("sessionDataKey")!= null) {
++                authInfoBean = new AuthInfoBean();
++                authInfoCache = new AuthInfoCache();
++            }
++
+             context.setAuthenticatorProperties(FrameworkUtils.getAuthenticatorPropertyMapFromIdP(
+                     context.getExternalIdP(), authenticator.getName()));
+             AuthenticatorFlowStatus status = authenticator.process(request, response, context);
+@@ -371,6 +380,15 @@
+             }
+ 
+             if (status == AuthenticatorFlowStatus.INCOMPLETE) {
++                if(context.isRequestFailed()){
++                    authInfoBean.setUserName(context.getSubject());
++                    authInfoBean.setResponse(status.name().toString());
++                    authInfoBean.setServiceProvider(sequenceConfig.getApplicationId());
++                    authInfoBean.setRequestTyep(context.getRequestType());
++                    authInfoBean.setAuthenticationType(authenticator.getName());
++                    authInfoBean.setIpAddress(request.getRemoteAddr());
++                    authInfoCache.addToCache(request.getParameter("sessionDataKey"),authInfoBean);
++                }
+                 if (log.isDebugEnabled()) {
+                     log.debug(authenticator.getName() + " is redirecting");
+                 }
+@@ -378,11 +396,19 @@
+             }
+ 
+             AuthenticatedIdPData authenticatedIdPData = new AuthenticatedIdPData();
+-            
++
+             // store authenticated user
+             String authenticatedUser = context.getSubject();
+             stepConfig.setAuthenticatedUser(authenticatedUser);
+             authenticatedIdPData.setUsername(authenticatedUser);
++
++            authInfoBean.setUserName(context.getSubject());
++            authInfoBean.setResponse(status.name().toString());
++            authInfoBean.setServiceProvider(sequenceConfig.getApplicationId());
++            authInfoBean.setRequestTyep(context.getRequestType());
++            authInfoBean.setAuthenticationType(authenticator.getName());
++            authInfoBean.setIpAddress(request.getRemoteAddr());
++            authInfoCache.addToCache(request.getParameter("sessionDataKey"),authInfoBean);
+ 
+             // store authenticated user's attributes
+             Map<ClaimMapping, String> userAttributes = context.getSubjectAttributes();
+@@ -420,11 +446,11 @@
+     }
+ 
+     protected void populateStepConfigWithAuthenticationDetails(StepConfig stepConfig,
+-            AuthenticatedIdPData authenticatedIdPData) {
++                                                               AuthenticatedIdPData authenticatedIdPData) {
+ 
+         stepConfig.setAuthenticatedUser(authenticatedIdPData.getUsername());
+         stepConfig.setAuthenticatedUserAttributes(authenticatedIdPData.getUserAttributes());
+         stepConfig.setAuthenticatedIdP(authenticatedIdPData.getIdpName());
+         stepConfig.setAuthenticatedAutenticator(authenticatedIdPData.getAuthenticator());
+     }
+-}
++}
+\ No newline at end of file
+Index: ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/AbstractApplicationAuthenticator.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/AbstractApplicationAuthenticator.java	(revision 211237)
++++ ../../../../ISCheckOutnBuild/Source5.1/turing/components/identity/org.wso2.carbon.identity.application.authentication.framework/4.2.2/src/main/java/org/wso2/carbon/identity/application/authentication/framework/AbstractApplicationAuthenticator.java	(revision )
+@@ -64,6 +64,8 @@
+                     Map<Integer, StepConfig> stepMap = context.getSequenceConfig().getStepMap();
+                     boolean stepHasMultiOption = false;
+ 
++                    context.setRequestFailed(true);
++
+                     if (stepMap != null && !stepMap.isEmpty()) {
+                         StepConfig stepConfig = stepMap.get(context.getCurrentStep());
+ 
